@@ -1,0 +1,137 @@
+from com_hrbot_constant.hrbot_config_mapper import *
+from com_htbot_utility.excel_reader import *
+from com_hrbot_logger.log import Log
+from com_htbot_utility.utility import *
+from allure_commons.types import AttachmentType
+from analytics_module.conftest import *
+from selenium.webdriver.common.keys import Keys
+import pytest
+import allure
+import time
+
+logger = Log.get_logger()
+
+
+@pytest.mark.usefixtures('setup')
+class Test67:
+
+    # in order verify that if user does not enter template name to create template, gets error message
+    # and click on save button test 49
+
+    def test67_verify_user_filter_data_by_last_modified(self):
+        try:
+            driver = self.driver
+
+            logger.info('enter user\'s credentials to login page')
+            element = driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get("login_user_box"))
+            element.send_keys(HrBot_Config_mapper.hrbot_config.get("username"))
+
+            element = driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get("login_pass_box"))
+            element.send_keys(HrBot_Config_mapper.hrbot_config.get("password"))
+            logger.info('User has successfully entered credentials')
+
+            driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get("login_button")).click()
+            logger.info('User has successfully clicked on login button')
+
+            logger.info('Waiting for the element')
+            Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('conversation_reports'), 'visibility', driver)
+
+            url = driver.current_url
+            url1 = ExcelReader.read_excel().get("hrbot_homepage_url")
+            print(url1, url)
+            if url:
+                try:
+                    assert url == url1.replace('\n', '')
+                    logger.info('User has been navigated successfully to home page')
+                except Exception as e:
+                    print("---------amjad-----", e)
+            else:
+                logger.info('User is not navigated to home page')
+
+            driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('central_repository_img')).click()
+            logger.info('User has successfully clicked on user\'s module')
+
+            Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('central_repository'), "visibility", driver)
+
+            url = driver.current_url
+            url1 = ExcelReader.read_excel().get('hrbot_cr_url')
+            if url:
+                assert url == url1.replace('\n', '')
+                logger.info('User has been navigated successfully to user\'s page')
+            else:
+                logger.info('User is not navigated to user\'s page')
+
+            flag = driver.find_element_by_xpath(
+                HrBot_Config_mapper.hrbot_locators.get('faq_repository')).is_displayed()
+            if flag:
+                logger.info('FAQ is visible there')
+            else:
+                logger.info('FAQ is not visible')
+
+            # click on faq repository
+
+            driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('faq')).click()
+            logger.info('User has clicked on successfully Faq repository')
+
+            # Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('central_repository'), "visibility", driver)
+
+            Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('template_list_title'), 'visibility', driver)
+
+            flag = driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('sort_functionality')).is_displayed()
+            assert flag == True
+            logger.info('sort functionality  is visible')
+
+            Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('template_list_title'), 'visibility', driver)
+
+            elements = driver.find_elements_by_xpath(HrBot_Config_mapper.hrbot_locators.get('template_last_modified'))
+            ls = []
+            for template in elements:
+                ls.append(template.text)
+
+            print('Before sorting data :', ls)
+
+            logger.log('Before sorting data : ', ls)
+
+            driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('sort_functionality')).click()
+            logger.info(
+                'User has click on sort functionality to select option and to sort data accordingly whether it is title or last modified')
+
+            driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('last_modified')).click()
+            logger.info('User has selected last modified to sort data')
+
+            Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('template_list_title'), 'visibility', driver)
+
+            elements = driver.find_elements_by_xpath(HrBot_Config_mapper.hrbot_locators.get('template_last_modified'))
+            ls1 = []
+            for template in elements:
+                ls1.append(template.text)
+
+            print('After sorting data :', ls1)
+
+            logger.log('After sorting data : ', ls1)
+
+            # driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('sort_functionality')).click()
+            # logger.info('User has click on sort functionality to select option and to sort data accordingly whether it is title or last modified')
+            #
+            # driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('sort_title')).click()
+            # logger.info('User has selected title to sort data')
+            #
+            # driver.find_element_by_xpath(HrBot_Config_mapper.hrbot_locators.get('sort_functionality')).click()
+            # logger.info('User has sorted data accordingly title')
+            #
+            # Utility.explicit_Wait1(HrBot_Config_mapper.hrbot_locators.get('template_list_title'), 'visibility', driver)
+            #
+            # elements = driver.find_elements_by_xpath(HrBot_Config_mapper.hrbot_locators.get('template_names'))
+            # ls = []
+            # for template in elements:
+            #     ls.append(template.text)
+            #
+            # print('After sorting data in descending order :', ls)
+            #
+            # logger.log('After sorting data :', ls)
+
+        except Exception as e:
+            allure.attach(driver.get_screenshot_as_png(), 'screenshots', AttachmentType.PNG)
+            logger.error('An Exception occurred in test case verify filter by last modified functionality on central repository 67')
+            print(e)
+            pytest.fail(e, pytrace=True)
